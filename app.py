@@ -6,14 +6,19 @@ import datetime
 import qrcode
 import cv2
 import numpy as np
+from pypdf import PdfWriter
 
-# 1. Page Configuration
+# ==========================================
+# 1. PAGE CONFIGURATION
+# ==========================================
 st.set_page_config(page_title="IT Lancer Pro", page_icon="⚡", layout="wide")
 
+# ==========================================
 # 2. PREMIUM DARK THEME (CSS)
+# ==========================================
 st.markdown("""
     <style>
-    /* Main Background - Deep Black/Blue */
+    /* Main Background */
     .stApp {
         background-color: #0E1117;
         color: #FAFAFA;
@@ -25,48 +30,61 @@ st.markdown("""
         border-right: 1px solid #30363d;
     }
     
-    /* Input Fields (Dark Mode) */
+    /* Input Fields (Dark Mode Fix) */
     .stTextInput > div > div > input, 
     .stNumberInput > div > div > input,
-    .stDateInput > div > div > input {
+    .stDateInput > div > div > input,
+    .stSelectbox > div > div > div {
         background-color: #0E1117;
         color: white;
         border: 1px solid #30363d;
     }
     
-    /* Sidebar Text Fix */
-    [data-testid="stSidebar"] .stMarkdown p, [data-testid="stSidebar"] label {
+    /* Text Color Fixes */
+    [data-testid="stSidebar"] .stMarkdown p, 
+    [data-testid="stSidebar"] label,
+    .stRadio label, .stCheckbox label {
         color: #e6edf3 !important;
     }
     
-    /* Buttons - Blue Gradient */
+    /* Buttons - Pro Green/Blue Gradient */
     div.stButton > button {
         width: 100%;
-        background: linear-gradient(90deg, #238636 0%, #2ea043 100%); /* Greenish Pro Look */
+        background: linear-gradient(90deg, #238636 0%, #2ea043 100%);
         color: white;
         border: none;
-        padding: 10px;
+        padding: 12px;
         font-weight: bold;
         border-radius: 6px;
+        transition: all 0.3s ease;
     }
     div.stButton > button:hover {
         background: linear-gradient(90deg, #2ea043 0%, #3fb950 100%);
         box-shadow: 0 4px 12px rgba(46, 160, 67, 0.4);
+        transform: translateY(-2px);
     }
     
     /* Headers */
     h1, h2, h3 {
-        color: #58a6ff !important; /* GitHub Blue */
+        color: #58a6ff !important;
     }
     
     /* Divider */
     hr {
         border-color: #30363d;
     }
+    
+    /* Expander */
+    .streamlit-expanderHeader {
+        background-color: #161b22;
+        color: white;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# --- HELPER FUNCTIONS ---
+# ==========================================
+# 3. HELPER FUNCTIONS
+# ==========================================
 
 def bangla_date_converter(eng_date):
     bangla_months = ["বৈশাখ", "জ্যৈষ্ঠ", "আষাঢ়", "শ্রাবণ", "ভাদ্র", "আশ্বিন", "কার্তিক", "অগ্রহায়ু", "পৌষ", "মাঘ", "ফাল্গুন", "চৈত্র"]
@@ -106,16 +124,22 @@ def convert_to_bangla_digits(number):
     eng, ban = "0123456789", "০১২৩৪৫৬৭৮৯"
     return str(number).translate(str(number).maketrans(eng, ban))
 
-# --- SIDEBAR NAVIGATION ---
+# ==========================================
+# 4. SIDEBAR NAVIGATION
+# ==========================================
 with st.sidebar:
-    st.title("🛠️ IT Lancer Pro")
+    st.image("https://cdn-icons-png.flaticon.com/512/10061/10061839.png", width=70)
+    st.title("IT Lancer Pro")
     st.markdown("---")
+    
     selected_tool = st.radio(
-        "মেনু:",
+        "টুলস মেনু:",
         [
             "📸 পাসপোর্ট ফটো মেকার",
             "📑 স্মার্ট ডকুমেন্ট স্ক্যানার",
             "🆔 NID/ফর্ম ফিলার",
+            "📂 PDF জয়েনার (Merge)",
+            "🔄 ইমেজ কনভার্টার",
             "✨ ফটো রিস্টোরার (AI)",
             "📅 বয়স ক্যালকুলেটর",
             "🗓️ বাংলা তারিখ কনভার্টার",
@@ -123,13 +147,13 @@ with st.sidebar:
         ]
     )
     st.markdown("---")
-    st.caption("Version 4.0 | Dark Mode")
+    st.caption("All-in-One Digital Center")
 
 # ==========================================
-# TOOL 1: PASSPORT PHOTO MAKER (PRO)
+# TOOL 1: PASSPORT PHOTO MAKER
 # ==========================================
 if selected_tool == "📸 পাসপোর্ট ফটো মেকার":
-    st.header("📸 স্টুডিও মাস্টার: পাসপোর্ট মেকার")
+    st.header("📸 পাসপোর্ট স্টুডিও প্রো")
     col1, col2 = st.columns([1, 2])
     
     with col1:
@@ -149,8 +173,9 @@ if selected_tool == "📸 পাসপোর্ট ফটো মেকার":
     with col2:
         if uploaded_file:
             if st.button("🚀 ছবি তৈরি করুন"):
-                with st.spinner("AI প্রসেস করছে..."):
+                with st.spinner("AI কাজ করছে..."):
                     try:
+                        # 1. Process Image
                         img = Image.open(uploaded_file)
                         no_bg = remove(img)
                         enhancer = ImageEnhance.Brightness(no_bg)
@@ -158,6 +183,7 @@ if selected_tool == "📸 পাসপোর্ট ফটো মেকার":
                         enhancer = ImageEnhance.Contrast(img)
                         img = enhancer.enhance(contrast)
                         
+                        # 2. Canvas Logic
                         target_w, target_h = 472, 590
                         canvas = Image.new("RGBA", (target_w, target_h), bg_color)
                         
@@ -175,6 +201,7 @@ if selected_tool == "📸 পাসপোর্ট ফটো মেকার":
                             
                         passport = canvas.convert("RGB")
                         
+                        # 3. Create A4 Sheet
                         sheet = Image.new("RGB", (2480, 3508), "white")
                         cols, rows, gap = 4, 6, 50
                         margin_left = (2480 - ((cols*passport.width) + (cols-1)*gap)) // 2
@@ -199,7 +226,9 @@ if selected_tool == "📸 পাসপোর্ট ফটো মেকার":
 # TOOL 2: SMART DOCUMENT SCANNER
 # ==========================================
 elif selected_tool == "📑 স্মার্ট ডকুমেন্ট স্ক্যানার":
-    st.header("📑 স্মার্ট স্ক্যানার")
+    st.header("📑 স্মার্ট স্ক্যানার (CamScanner)")
+    st.write("বাজে কোয়ালিটির ডকুমেন্টের ছবিকে পরিষ্কার স্ক্যান কপিতে রূপান্তর করুন।")
+    
     doc_file = st.file_uploader("ডকুমেন্টের ছবি দিন", type=["jpg", "png"])
     
     if doc_file:
@@ -239,17 +268,16 @@ elif selected_tool == "🆔 NID/ফর্ম ফিলার":
     with col1:
         name = st.text_input("নাম (Name)")
         father = st.text_input("পিতার নাম")
-        dob = st.text_input("জন্ম তারিখ (DD-MM-YYYY)")
+        dob = st.text_input("জন্ম তারিখ")
         id_no = st.text_input("ID Number")
     
     with col2:
-        st.info("কার্ড প্রিভিউ নিচে দেখানো হবে")
+        st.info("কার্ড প্রিভিউ")
         if st.button("কার্ড জেনারেট করুন"):
             card = Image.new("RGB", (600, 380), "#f0fdf4")
             draw = ImageDraw.Draw(card)
             draw.rectangle([(10, 10), (590, 370)], outline="#16a34a", width=4)
             draw.text((220, 30), "National ID Card", fill="#16a34a")
-            
             try: font = ImageFont.load_default()
             except: font = ImageFont.load_default()
 
@@ -257,7 +285,6 @@ elif selected_tool == "🆔 NID/ফর্ম ফিলার":
             draw.text((50, 120), f"Father: {father}", fill="black", font=font)
             draw.text((50, 160), f"DOB: {dob}", fill="red", font=font)
             draw.text((50, 200), f"ID NO: {id_no}", fill="blue", font=font)
-            
             draw.rectangle([(450, 80), (550, 200)], outline="black")
             draw.text((470, 130), "Photo", fill="gray")
             
@@ -267,7 +294,67 @@ elif selected_tool == "🆔 NID/ফর্ম ফিলার":
             st.download_button("📥 ডাউনলোড কার্ড", buf.getvalue(), "id_card.jpg", "image/jpeg")
 
 # ==========================================
-# TOOL 4: PHOTO RESTORER
+# TOOL 4: PDF MERGER
+# ==========================================
+elif selected_tool == "📂 PDF জয়েনার (Merge)":
+    st.header("📂 PDF ও ইমেজ জয়েনার")
+    st.write("একাধিক PDF বা ছবি একসাথে জোড়া দিয়ে একটি ফাইল বানান।")
+    
+    uploaded_files = st.file_uploader("ফাইল দিন (PDF/Image)", 
+                                      type=["pdf", "jpg", "png"], 
+                                      accept_multiple_files=True)
+    
+    if uploaded_files and st.button("🔗 ফাইল জোড়া লাগান"):
+        merger = PdfWriter()
+        try:
+            for file in uploaded_files:
+                if file.type in ["image/jpeg", "image/png", "image/jpg"]:
+                    img = Image.open(file)
+                    img_pdf = io.BytesIO()
+                    img = img.convert('RGB')
+                    img.save(img_pdf, format="PDF")
+                    merger.append(img_pdf)
+                else:
+                    merger.append(file)
+            
+            output_pdf = io.BytesIO()
+            merger.write(output_pdf)
+            st.success("✅ ফাইল জোড়া লাগানো হয়েছে!")
+            st.download_button("📥 ডাউনলোড মার্জড PDF", output_pdf.getvalue(), "merged.pdf", "application/pdf")
+        except Exception as e: st.error(str(e))
+
+# ==========================================
+# TOOL 5: IMAGE CONVERTER
+# ==========================================
+elif selected_tool == "🔄 ইমেজ কনভার্টার":
+    st.header("🔄 ইমেজ ফরম্যাট কনভার্টার")
+    img_file = st.file_uploader("ছবি দিন", type=["png", "jpg", "jpeg", "webp"])
+    target_format = st.selectbox("কোন ফরম্যাটে নিবেন?", ["JPEG", "PNG", "PDF", "WEBP"])
+    
+    if img_file and st.button("🔄 কনভার্ট করুন"):
+        image = Image.open(img_file)
+        if image.mode in ("RGBA", "P") and target_format == "JPEG":
+            image = image.convert("RGB")
+            
+        buf = io.BytesIO()
+        if target_format == "JPEG":
+            image.save(buf, format="JPEG", quality=100)
+            mime, ext = "image/jpeg", "jpg"
+        elif target_format == "PNG":
+            image.save(buf, format="PNG")
+            mime, ext = "image/png", "png"
+        elif target_format == "PDF":
+            image.save(buf, format="PDF")
+            mime, ext = "application/pdf", "pdf"
+        elif target_format == "WEBP":
+            image.save(buf, format="WEBP")
+            mime, ext = "image/webp", "webp"
+            
+        st.success("কনভার্ট সম্পন্ন!")
+        st.download_button(f"📥 ডাউনলোড {target_format}", buf.getvalue(), f"converted.{ext}", mime)
+
+# ==========================================
+# TOOL 6: PHOTO RESTORER
 # ==========================================
 elif selected_tool == "✨ ফটো রিস্টোরার (AI)":
     st.header("✨ ফটো এনহ্যান্সার")
@@ -297,7 +384,7 @@ elif selected_tool == "✨ ফটো রিস্টোরার (AI)":
             st.download_button("📥 ডাউনলোড", buf.getvalue(), "restored.jpg", "image/jpeg")
 
 # ==========================================
-# TOOL 5: AGE CALCULATOR
+# TOOL 7: AGE CALCULATOR
 # ==========================================
 elif selected_tool == "📅 বয়স ক্যালকুলেটর":
     st.header("📅 বয়স ক্যালকুলেটর")
@@ -311,10 +398,10 @@ elif selected_tool == "📅 বয়স ক্যালকুলেটর":
         remaining_days = delta.days % 365
         months = remaining_days // 30
         days = remaining_days % 30
-        st.success(f"আপনার বয়স: {years} বছর, {months} মাস, {days} দিন (প্রায়)")
+        st.success(f"বয়স: {years} বছর, {months} মাস, {days} দিন (প্রায়)")
 
 # ==========================================
-# TOOL 6: BANGLA DATE
+# TOOL 8: BANGLA DATE
 # ==========================================
 elif selected_tool == "🗓️ বাংলা তারিখ কনভার্টার":
     st.header("🗓️ বাংলা তারিখ কনভার্টার")
@@ -323,7 +410,7 @@ elif selected_tool == "🗓️ বাংলা তারিখ কনভার�
         st.success(f"বাংলা তারিখ: {convert_to_bangla_digits(bangla_date_converter(eng_date))}")
 
 # ==========================================
-# TOOL 7: QR CODE
+# TOOL 9: QR CODE
 # ==========================================
 elif selected_tool == "📱 QR কোড জেনারেটর":
     st.header("📱 QR কোড মেকার")
