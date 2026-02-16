@@ -8,48 +8,60 @@ import cv2
 import numpy as np
 
 # 1. Page Configuration
-st.set_page_config(page_title="IT Lancer Pro Tools", page_icon="🚀", layout="wide")
+st.set_page_config(page_title="IT Lancer Pro", page_icon="⚡", layout="wide")
 
-# 2. NEW THEME (Modern Glassmorphism & Gradient)
+# 2. PREMIUM DARK THEME (CSS)
 st.markdown("""
     <style>
-    /* Main Background */
+    /* Main Background - Deep Black/Blue */
     .stApp {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        color: #333333;
+        background-color: #0E1117;
+        color: #FAFAFA;
     }
     
-    /* Sidebar Styling */
+    /* Sidebar Background */
     section[data-testid="stSidebar"] {
-        background-color: #ffffff;
-        border-right: 1px solid #e0e0e0;
+        background-color: #161b22;
+        border-right: 1px solid #30363d;
     }
     
-    /* Button Styling */
+    /* Input Fields (Dark Mode) */
+    .stTextInput > div > div > input, 
+    .stNumberInput > div > div > input,
+    .stDateInput > div > div > input {
+        background-color: #0E1117;
+        color: white;
+        border: 1px solid #30363d;
+    }
+    
+    /* Sidebar Text Fix */
+    [data-testid="stSidebar"] .stMarkdown p, [data-testid="stSidebar"] label {
+        color: #e6edf3 !important;
+    }
+    
+    /* Buttons - Blue Gradient */
     div.stButton > button {
         width: 100%;
-        background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
+        background: linear-gradient(90deg, #238636 0%, #2ea043 100%); /* Greenish Pro Look */
         color: white;
         border: none;
-        padding: 12px;
-        border-radius: 8px;
+        padding: 10px;
         font-weight: bold;
-        transition: all 0.3s ease;
+        border-radius: 6px;
     }
     div.stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        background: linear-gradient(90deg, #2ea043 0%, #3fb950 100%);
+        box-shadow: 0 4px 12px rgba(46, 160, 67, 0.4);
     }
     
-    /* Header Styling */
+    /* Headers */
     h1, h2, h3 {
-        color: #1e3a8a;
-        font-family: 'Arial', sans-serif;
+        color: #58a6ff !important; /* GitHub Blue */
     }
     
-    /* Input Fields */
-    .stTextInput > div > div > input {
-        border-radius: 5px;
+    /* Divider */
+    hr {
+        border-color: #30363d;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -57,69 +69,49 @@ st.markdown("""
 # --- HELPER FUNCTIONS ---
 
 def bangla_date_converter(eng_date):
-    # A simple approximation for English to Bangla Date
-    # Note: Precise conversion requires complex lunar calendar logic. 
-    # This is a standard solar conversion.
-    
     bangla_months = ["বৈশাখ", "জ্যৈষ্ঠ", "আষাঢ়", "শ্রাবণ", "ভাদ্র", "আশ্বিন", "কার্তিক", "অগ্রহায়ু", "পৌষ", "মাঘ", "ফাল্গুন", "চৈত্র"]
+    day, month, year = eng_date.day, eng_date.month, eng_date.year
     
-    day = eng_date.day
-    month = eng_date.month
-    year = eng_date.year
+    if month > 4 or (month == 4 and day >= 14): bangla_year = year - 593
+    else: bangla_year = year - 594
     
-    # New Year starts on April 14
-    if month > 4 or (month == 4 and day >= 14):
-        bangla_year = year - 593
-    else:
-        bangla_year = year - 594
-        
-    # Month calculation logic (Simplified)
-    if month == 4 and day >= 14: bg_month_idx = 0 # Baishakh
-    elif month == 5 and day < 15: bg_month_idx = 0
-    elif month == 5: bg_month_idx = 1 # Jaishtha
-    elif month == 6 and day < 15: bg_month_idx = 1
-    elif month == 6: bg_month_idx = 2 # Ashar
-    elif month == 7 and day < 16: bg_month_idx = 2
-    elif month == 7: bg_month_idx = 3 # Srabon
-    elif month == 8 and day < 16: bg_month_idx = 3
-    elif month == 8: bg_month_idx = 4 # Bhadro
-    elif month == 9 and day < 16: bg_month_idx = 4
-    elif month == 9: bg_month_idx = 5 # Ashwin
-    elif month == 10 and day < 16: bg_month_idx = 5
-    elif month == 10: bg_month_idx = 6 # Kartik
-    elif month == 11 and day < 15: bg_month_idx = 6
-    elif month == 11: bg_month_idx = 7 # Ogrohayon
-    elif month == 12 and day < 15: bg_month_idx = 7
-    elif month == 12: bg_month_idx = 8 # Poush
-    elif month == 1 and day < 14: bg_month_idx = 8
-    elif month == 1: bg_month_idx = 9 # Magh
-    elif month == 2 and day < 13: bg_month_idx = 9
-    elif month == 2: bg_month_idx = 10 # Falgun
-    elif month == 3 and day < 15: bg_month_idx = 10
-    elif month == 3: bg_month_idx = 11 # Chaitra
-    else: bg_month_idx = 11
+    if month == 4 and day >= 14: idx = 0
+    elif month == 5 and day < 15: idx = 0
+    elif month == 5: idx = 1
+    elif month == 6 and day < 15: idx = 1
+    elif month == 6: idx = 2
+    elif month == 7 and day < 16: idx = 2
+    elif month == 7: idx = 3
+    elif month == 8 and day < 16: idx = 3
+    elif month == 8: idx = 4
+    elif month == 9 and day < 16: idx = 4
+    elif month == 9: idx = 5
+    elif month == 10 and day < 16: idx = 5
+    elif month == 10: idx = 6
+    elif month == 11 and day < 15: idx = 6
+    elif month == 11: idx = 7
+    elif month == 12 and day < 15: idx = 7
+    elif month == 12: idx = 8
+    elif month == 1 and day < 14: idx = 8
+    elif month == 1: idx = 9
+    elif month == 2 and day < 13: idx = 9
+    elif month == 2: idx = 10
+    elif month == 3 and day < 15: idx = 10
+    elif month == 3: idx = 11
+    else: idx = 11
     
-    # Day mapping (Simplified: usually date - 13/14)
-    # This is placeholder logic for brevity. Real logic is longer.
-    bg_day = day # Keeping English day number for simplicity in this version
-    
-    return f"{bg_day}ই {bangla_months[bg_month_idx]}, {bangla_year} বঙ্গাব্দ"
+    return f"{day}ই {bangla_months[idx]}, {bangla_year} বঙ্গাব্দ"
 
 def convert_to_bangla_digits(number):
-    eng = "0123456789"
-    ban = "০১২৩৪৫৬৭৮৯"
-    trans = str(number).maketrans(eng, ban)
-    return str(number).translate(trans)
-
+    eng, ban = "0123456789", "০১২৩৪৫৬৭৮৯"
+    return str(number).translate(str(number).maketrans(eng, ban))
 
 # --- SIDEBAR NAVIGATION ---
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/3135/3135715.png", width=80)
-    st.title("IT Lancer Tools")
-    st.write("Professional Digital Services")
-    
+    st.title("🛠️ IT Lancer Pro")
+    st.markdown("---")
     selected_tool = st.radio(
-        "মেনু থেকে টুল সিলেক্ট করুন:",
+        "মেনু:",
         [
             "📸 পাসপোর্ট ফটো মেকার",
             "📑 স্মার্ট ডকুমেন্ট স্ক্যানার",
@@ -130,8 +122,8 @@ with st.sidebar:
             "📱 QR কোড জেনারেটর"
         ]
     )
-    st.divider()
-    st.info("Version 3.0 | Unlimited Free")
+    st.markdown("---")
+    st.caption("Version 4.0 | Dark Mode")
 
 # ==========================================
 # TOOL 1: PASSPORT PHOTO MAKER (PRO)
@@ -143,7 +135,7 @@ if selected_tool == "📸 পাসপোর্ট ফটো মেকার":
     with col1:
         uploaded_file = st.file_uploader("ছবি আপলোড করুন", type=["jpg", "png", "jpeg"])
         if uploaded_file:
-            st.subheader("সেটিংস")
+            st.markdown("### সেটিংস")
             bg_color = st.color_picker("ব্যাকগ্রাউন্ড:", "#3b82f6")
             num_copies = st.number_input("A4 পেজে কয় কপি?", 1, 25, 4)
             add_border = st.checkbox("বর্ডার ও কাটার দাগ?", value=True)
@@ -161,7 +153,6 @@ if selected_tool == "📸 পাসপোর্ট ফটো মেকার":
                     try:
                         img = Image.open(uploaded_file)
                         no_bg = remove(img)
-                        
                         enhancer = ImageEnhance.Brightness(no_bg)
                         img = enhancer.enhance(brightness)
                         enhancer = ImageEnhance.Contrast(img)
@@ -184,7 +175,6 @@ if selected_tool == "📸 পাসপোর্ট ফটো মেকার":
                             
                         passport = canvas.convert("RGB")
                         
-                        # Create A4
                         sheet = Image.new("RGB", (2480, 3508), "white")
                         cols, rows, gap = 4, 6, 50
                         margin_left = (2480 - ((cols*passport.width) + (cols-1)*gap)) // 2
@@ -203,64 +193,48 @@ if selected_tool == "📸 পাসপোর্ট ফটো মেকার":
                         buf = io.BytesIO()
                         sheet.save(buf, format="JPEG", quality=95)
                         st.download_button("📥 ডাউনলোড প্রিন্ট ফাইল", buf.getvalue(), "passport_print.jpg", "image/jpeg")
-                        
                     except Exception as e: st.error(str(e))
 
 # ==========================================
 # TOOL 2: SMART DOCUMENT SCANNER
 # ==========================================
 elif selected_tool == "📑 স্মার্ট ডকুমেন্ট স্ক্যানার":
-    st.header("📑 স্মার্ট স্ক্যানার (CamScanner Alternative)")
-    st.write("কালো বা বাঁকা ডকুমেন্টের ছবিকে পরিষ্কার স্ক্যান কপিতে রূপান্তর করুন।")
-    
+    st.header("📑 স্মার্ট স্ক্যানার")
     doc_file = st.file_uploader("ডকুমেন্টের ছবি দিন", type=["jpg", "png"])
     
     if doc_file:
         file_bytes = np.asarray(bytearray(doc_file.read()), dtype=np.uint8)
         opencv_image = cv2.imdecode(file_bytes, 1)
-        
         st.image(opencv_image, channels="BGR", caption="অরিজিনাল", width=300)
         
-        col1, col2 = st.columns(2)
-        with col1:
-            filter_mode = st.radio("ফিল্টার:", ["ম্যাজিক কালার (Color)", "সাদা-কালো (B&W)", "শুধুমাত্র পরিষ্কার (Clear)"])
+        filter_mode = st.radio("ফিল্টার:", ["ম্যাজিক কালার", "সাদা-কালো (B&W)", "পরিষ্কার (Clear)"], horizontal=True)
         
         if st.button("✨ স্ক্যান করুন"):
-            try:
-                processed = opencv_image.copy()
-                
-                if filter_mode == "সাদা-কালো (B&W)":
-                    gray = cv2.cvtColor(processed, cv2.COLOR_BGR2GRAY)
-                    processed = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
-                    final_pil = Image.fromarray(processed)
-                    
-                elif filter_mode == "ম্যাজিক কালার (Color)":
-                    processed = cv2.convertScaleAbs(processed, alpha=1.2, beta=10) # Contrast
-                    hsv = cv2.cvtColor(processed, cv2.COLOR_BGR2HSV)
-                    hsv[:, :, 1] = cv2.multiply(hsv[:, :, 1], 1.2) # Saturation
-                    processed = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-                    kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]]) # Sharpen
-                    processed = cv2.filter2D(processed, -1, kernel)
-                    final_pil = Image.fromarray(cv2.cvtColor(processed, cv2.COLOR_BGR2RGB))
-                    
-                else: # Clear
-                    processed = cv2.convertScaleAbs(processed, alpha=1.1, beta=5)
-                    final_pil = Image.fromarray(cv2.cvtColor(processed, cv2.COLOR_BGR2RGB))
+            processed = opencv_image.copy()
+            if filter_mode == "সাদা-কালো (B&W)":
+                gray = cv2.cvtColor(processed, cv2.COLOR_BGR2GRAY)
+                processed = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+                final_pil = Image.fromarray(processed)
+            elif filter_mode == "ম্যাজিক কালার":
+                processed = cv2.convertScaleAbs(processed, alpha=1.2, beta=10)
+                hsv = cv2.cvtColor(processed, cv2.COLOR_BGR2HSV)
+                hsv[:, :, 1] = cv2.multiply(hsv[:, :, 1], 1.2)
+                processed = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+                final_pil = Image.fromarray(cv2.cvtColor(processed, cv2.COLOR_BGR2RGB))
+            else:
+                processed = cv2.convertScaleAbs(processed, alpha=1.1, beta=5)
+                final_pil = Image.fromarray(cv2.cvtColor(processed, cv2.COLOR_BGR2RGB))
 
-                st.image(final_pil, caption="ফাইনাল স্ক্যান", use_column_width=True)
-                
-                buf = io.BytesIO()
-                final_pil.save(buf, format="JPEG", quality=95)
-                st.download_button("📥 ডাউনলোড স্ক্যান কপি", buf.getvalue(), "scanned_doc.jpg", "image/jpeg")
-            except Exception as e: st.error(str(e))
+            st.image(final_pil, caption="ফাইনাল স্ক্যান", use_column_width=True)
+            buf = io.BytesIO()
+            final_pil.save(buf, format="JPEG", quality=95)
+            st.download_button("📥 ডাউনলোড স্ক্যান কপি", buf.getvalue(), "scanned_doc.jpg", "image/jpeg")
 
 # ==========================================
 # TOOL 3: NID/FORM FILLER
 # ==========================================
 elif selected_tool == "🆔 NID/ফর্ম ফিলার":
     st.header("🆔 অটোমেটিক ফর্ম ফিলার")
-    st.write("তথ্য দিন, আমি কার্ড বা ফর্মে বসিয়ে দিব।")
-    
     col1, col2 = st.columns(2)
     with col1:
         name = st.text_input("নাম (Name)")
@@ -269,104 +243,67 @@ elif selected_tool == "🆔 NID/ফর্ম ফিলার":
         id_no = st.text_input("ID Number")
     
     with col2:
-        # Placeholder for NID Background (In real app, load a template image)
-        # Here we create a dummy card for demonstration
-        st.write("কার্ড প্রিভিউ:")
-        
+        st.info("কার্ড প্রিভিউ নিচে দেখানো হবে")
         if st.button("কার্ড জেনারেট করুন"):
-            # Create a blank card template
-            card_w, card_h = 600, 380
-            card = Image.new("RGB", (card_w, card_h), "#eef2f3")
+            card = Image.new("RGB", (600, 380), "#f0fdf4")
             draw = ImageDraw.Draw(card)
+            draw.rectangle([(10, 10), (590, 370)], outline="#16a34a", width=4)
+            draw.text((220, 30), "National ID Card", fill="#16a34a")
             
-            # Draw Design Elements
-            draw.rectangle([(20, 20), (580, 360)], outline="#2ecc71", width=3)
-            draw.text((200, 30), "National ID Card", fill="green")
-            
-            # Use default font (In real app, upload a .ttf font file)
-            # draw.text support depends on system fonts, using default here
-            try:
-                # Attempt to load a better font if available, else default
-                font = ImageFont.truetype("arial.ttf", 20)
-                font_bold = ImageFont.truetype("arialbd.ttf", 22)
-            except:
-                font = ImageFont.load_default()
-                font_bold = ImageFont.load_default()
+            try: font = ImageFont.load_default()
+            except: font = ImageFont.load_default()
 
-            # Draw User Data
-            draw.text((50, 80), f"Name: {name}", fill="black", font=font_bold)
+            draw.text((50, 80), f"Name: {name}", fill="black", font=font)
             draw.text((50, 120), f"Father: {father}", fill="black", font=font)
-            draw.text((50, 160), f"Date of Birth: {dob}", fill="red", font=font)
-            draw.text((50, 200), f"ID NO: {id_no}", fill="blue", font=font_bold)
+            draw.text((50, 160), f"DOB: {dob}", fill="red", font=font)
+            draw.text((50, 200), f"ID NO: {id_no}", fill="blue", font=font)
             
-            # Place a dummy photo box
-            draw.rectangle([(450, 80), (550, 200)], outline="black", width=1)
-            draw.text((465, 130), "Photo", fill="gray", font=font)
+            draw.rectangle([(450, 80), (550, 200)], outline="black")
+            draw.text((470, 130), "Photo", fill="gray")
             
-            st.image(card, caption="Generated ID Card")
-            
+            st.image(card)
             buf = io.BytesIO()
             card.save(buf, format="JPEG")
             st.download_button("📥 ডাউনলোড কার্ড", buf.getvalue(), "id_card.jpg", "image/jpeg")
 
 # ==========================================
-# TOOL 4: PHOTO RESTORER & COLORIZER
+# TOOL 4: PHOTO RESTORER
 # ==========================================
 elif selected_tool == "✨ ফটো রিস্টোরার (AI)":
-    st.header("✨ ফটো এনহ্যান্সার (AI Repair)")
-    st.write("ঝাপসা বা পুরনো ছবিকে পরিষ্কার এবং উজ্জ্বল করুন।")
-    
-    uploaded_file = st.file_uploader("নষ্ট বা ঝাপসা ছবি দিন", type=["jpg", "png"])
-    
+    st.header("✨ ফটো এনহ্যান্সার")
+    uploaded_file = st.file_uploader("নষ্ট ছবি দিন", type=["jpg", "png"])
     if uploaded_file:
         file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
         img = cv2.imdecode(file_bytes, 1)
         st.image(img, channels="BGR", caption="আগের ছবি", width=300)
         
-        mode = st.radio("মোড:", ["শার্পনেস (ঝাপসা ঠিক করা)", "কালার ফিক্স (পুরনো ছবি)", "নয়েজ রিমুভ (দানা দানা ভাব দূর)"])
-        
+        mode = st.radio("মোড:", ["শার্পনেস", "কালার ফিক্স", "নয়েজ রিমুভ"], horizontal=True)
         if st.button("✨ ফিক্স করুন"):
-            try:
-                processed = img.copy()
-                
-                if mode == "শার্পনেস (ঝাপসা ঠিক করা)":
-                    kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
-                    processed = cv2.filter2D(processed, -1, kernel)
-                    # Extra detail enhance
-                    processed = cv2.detailEnhance(processed, sigma_s=10, sigma_r=0.15)
-                    
-                elif mode == "কালার ফিক্স (পুরনো ছবি)":
-                    # Histogram Equalization for each channel
-                    img_yuv = cv2.cvtColor(processed, cv2.COLOR_BGR2YUV)
-                    img_yuv[:,:,0] = cv2.equalizeHist(img_yuv[:,:,0])
-                    processed = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
-                    # Boost saturation slightly
-                    hsv = cv2.cvtColor(processed, cv2.COLOR_BGR2HSV)
-                    hsv[:, :, 1] = cv2.multiply(hsv[:, :, 1], 1.2)
-                    processed = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-                    
-                elif mode == "নয়েজ রিমুভ (দানা দানা ভাব দূর)":
-                    processed = cv2.fastNlMeansDenoisingColored(processed, None, 10, 10, 7, 21)
+            processed = img.copy()
+            if mode == "শার্পনেস":
+                kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
+                processed = cv2.filter2D(processed, -1, kernel)
+            elif mode == "কালার ফিক্স":
+                img_yuv = cv2.cvtColor(processed, cv2.COLOR_BGR2YUV)
+                img_yuv[:,:,0] = cv2.equalizeHist(img_yuv[:,:,0])
+                processed = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
+            elif mode == "নয়েজ রিমুভ":
+                processed = cv2.fastNlMeansDenoisingColored(processed, None, 10, 10, 7, 21)
 
-                final_pil = Image.fromarray(cv2.cvtColor(processed, cv2.COLOR_BGR2RGB))
-                st.image(final_pil, caption="ফিক্স করা ছবি", width=300)
-                
-                buf = io.BytesIO()
-                final_pil.save(buf, format="JPEG", quality=95)
-                st.download_button("📥 ডাউনলোড", buf.getvalue(), "restored_photo.jpg", "image/jpeg")
-            except Exception as e: st.error("AI Error: " + str(e))
+            final_pil = Image.fromarray(cv2.cvtColor(processed, cv2.COLOR_BGR2RGB))
+            st.image(final_pil, caption="ফিক্স করা ছবি", width=300)
+            buf = io.BytesIO()
+            final_pil.save(buf, format="JPEG")
+            st.download_button("📥 ডাউনলোড", buf.getvalue(), "restored.jpg", "image/jpeg")
 
 # ==========================================
 # TOOL 5: AGE CALCULATOR
 # ==========================================
 elif selected_tool == "📅 বয়স ক্যালকুলেটর":
     st.header("📅 বয়স ক্যালকুলেটর")
-    
     col1, col2 = st.columns(2)
-    with col1:
-        dob = st.date_input("জন্ম তারিখ", datetime.date(2000, 1, 1))
-    with col2:
-        target = st.date_input("হিসাবের তারিখ", datetime.date.today())
+    with col1: dob = st.date_input("জন্ম তারিখ", datetime.date(2000, 1, 1))
+    with col2: target = st.date_input("হিসাবের তারিখ", datetime.date.today())
         
     if st.button("হিসাব করুন"):
         delta = target - dob
@@ -374,39 +311,30 @@ elif selected_tool == "📅 বয়স ক্যালকুলেটর":
         remaining_days = delta.days % 365
         months = remaining_days // 30
         days = remaining_days % 30
-        
         st.success(f"আপনার বয়স: {years} বছর, {months} মাস, {days} দিন (প্রায়)")
 
 # ==========================================
-# TOOL 6: BANGLA DATE CONVERTER
+# TOOL 6: BANGLA DATE
 # ==========================================
 elif selected_tool == "🗓️ বাংলা তারিখ কনভার্টার":
     st.header("🗓️ বাংলা তারিখ কনভার্টার")
-    
     eng_date = st.date_input("ইংরেজি তারিখ সিলেক্ট করুন")
-    
     if st.button("কনভার্ট করুন"):
-        bangla_date = bangla_date_converter(eng_date)
-        bangla_digits = convert_to_bangla_digits(bangla_date)
-        
-        st.success(f"বাংলা তারিখ: {bangla_digits}")
+        st.success(f"বাংলা তারিখ: {convert_to_bangla_digits(bangla_date_converter(eng_date))}")
 
 # ==========================================
-# TOOL 7: QR CODE GENERATOR
+# TOOL 7: QR CODE
 # ==========================================
 elif selected_tool == "📱 QR কোড জেনারেটর":
     st.header("📱 QR কোড মেকার")
     data = st.text_input("লিংক বা টেক্সট লিখুন")
-    color = st.color_picker("QR কোডের রং", "#000000")
-    
+    color = st.color_picker("QR রং", "#000000")
     if data and st.button("জেনারেট করুন"):
         qr = qrcode.QRCode(box_size=10, border=4)
         qr.add_data(data)
         qr.make(fit=True)
         img = qr.make_image(fill_color=color, back_color="white")
-        
         st.image(img.get_image(), width=250)
-        
         buf = io.BytesIO()
         img.save(buf, format="PNG")
-        st.download_button("📥 ডাউনলোড QR Code", buf.getvalue(), "qrcode.png", "image/png")
+        st.download_button("📥 ডাউনলোড", buf.getvalue(), "qrcode.png", "image/png")
