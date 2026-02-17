@@ -11,7 +11,7 @@ from pypdf import PdfWriter
 # ==========================================
 # 1. PAGE CONFIGURATION
 # ==========================================
-st.set_page_config(page_title="IT Lancer Pro", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="Shafin's Tools", page_icon="⚡", layout="wide")
 
 # ==========================================
 # 2. PREMIUM DARK THEME (CSS)
@@ -129,7 +129,7 @@ def convert_to_bangla_digits(number):
 # ==========================================
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/10061/10061839.png", width=70)
-    st.title("IT Lancer Pro")
+    st.title("Shafin's Tools")
     st.markdown("---")
     
     selected_tool = st.radio(
