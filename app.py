@@ -12,59 +12,26 @@ import numpy as np
 st.set_page_config(page_title="Shafin's Tools", page_icon="⚡", layout="wide")
 
 # ==========================================
-# 2. PREMIUM DARK THEME (CSS)
+# 2. PREMIUM DARK THEME
 # ==========================================
 st.markdown("""
     <style>
-    /* Main Background */
-    .stApp {
-        background-color: #0E1117;
-        color: #FAFAFA;
+    .stApp { background-color: #0E1117; color: #FAFAFA; }
+    section[data-testid="stSidebar"] { background-color: #161b22; border-right: 1px solid #30363d; }
+    .stTextInput > div > div > input, .stNumberInput > div > div > input, .stSelectbox > div > div > div {
+        background-color: #0E1117; color: white; border: 1px solid #30363d;
     }
-    
-    /* Sidebar Background */
-    section[data-testid="stSidebar"] {
-        background-color: #161b22;
-        border-right: 1px solid #30363d;
-    }
-    
-    /* Input Fields */
-    .stTextInput > div > div > input, 
-    .stNumberInput > div > div > input,
-    .stSelectbox > div > div > div {
-        background-color: #0E1117;
-        color: white;
-        border: 1px solid #30363d;
-    }
-    
-    /* Text Color Fixes */
-    [data-testid="stSidebar"] .stMarkdown p, 
-    [data-testid="stSidebar"] label,
-    .stRadio label, .stCheckbox label {
+    [data-testid="stSidebar"] .stMarkdown p, [data-testid="stSidebar"] label, .stRadio label, .stCheckbox label {
         color: #e6edf3 !important;
     }
-    
-    /* Buttons */
     div.stButton > button {
-        width: 100%;
-        background: linear-gradient(90deg, #238636 0%, #2ea043 100%);
-        color: white;
-        border: none;
-        padding: 12px;
-        font-weight: bold;
-        border-radius: 6px;
-        transition: all 0.3s ease;
+        width: 100%; background: linear-gradient(90deg, #238636 0%, #2ea043 100%);
+        color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px;
     }
     div.stButton > button:hover {
         background: linear-gradient(90deg, #2ea043 0%, #3fb950 100%);
-        box-shadow: 0 4px 12px rgba(46, 160, 67, 0.4);
-        transform: translateY(-2px);
     }
-    
-    /* Headers */
-    h1, h2, h3 {
-        color: #58a6ff !important;
-    }
+    h1, h2, h3 { color: #58a6ff !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -78,52 +45,45 @@ with st.sidebar:
     
     selected_tool = st.radio(
         "টুলস মেনু:",
-        [
-            "📸 ফটো মেকার (পেপার সেভার)",
-            "🔄 ইমেজ কনভার্টার",
-            "✨ ফটো রিস্টোরার (AI)",
-            "📱 QR কোড জেনারেটর"
-        ]
+        ["📸 ফটো মেকার (লাইভ মুভ)", "🔄 ইমেজ কনভার্টার", "✨ ফটো রিস্টোরার (AI)", "📱 QR কোড জেনারেটর"]
     )
     st.markdown("---")
-    st.caption("Auto-Fill Paper Saving Mode")
 
 # ==========================================
-# TOOL 1: PHOTO MAKER (SMART AUTO FILL)
+# SESSION STATE SETUP (For Live Moving)
 # ==========================================
-if selected_tool == "📸 ফটো মেকার (পেপার সেভার)":
-    st.header("📸 স্টুডিও মাস্টার (স্মার্ট গ্রিড)")
-    col1, col2 = st.columns([1, 2])
+if 'processed_photo' not in st.session_state:
+    st.session_state.processed_photo = None
+
+# ==========================================
+# TOOL 1: PHOTO MAKER (LIVE MOVE)
+# ==========================================
+if selected_tool == "📸 ফটো মেকার (লাইভ মুভ)":
+    st.header("📸 স্টুডিও মাস্টার (লাইভ মুভমেন্ট)")
     
-    with col1:
-        uploaded_file = st.file_uploader("ছবি আপলোড করুন", type=["jpg", "png", "jpeg"])
+    # 1. Upload & Initial Settings
+    col_upload, col_settings = st.columns([1, 2])
+    
+    with col_upload:
+        uploaded_file = st.file_uploader("প্রথমে ছবি আপলোড করুন", type=["jpg", "png", "jpeg"])
+        
         if uploaded_file:
-            st.markdown("### সেটিংস")
-            
-            size_mode = st.radio("সাইজ:", ["পাসপোর্ট (40x50 mm)", "স্ট্যাম্প (20x25 mm)"], horizontal=True)
+            st.info("১. প্রথমে নিচের বাটন চেপে ছবি রেডি করুন।")
+            size_mode = st.radio("সাইজ:", ["পাসপোর্ট (40x50 mm)", "স্ট্যাম্প (20x25 mm)"])
             bg_color = st.color_picker("ব্যাকগ্রাউন্ড:", "#3b82f6")
             
-            # Smart Copy Input
-            st.info("💡 টিপস: পেপার ভরাতে চাইলে কপি সংখ্যা বাড়িয়ে দিন।")
-            num_copies = st.number_input("কয় কপি লাগবে?", 1, 100, 30) # Default increased
-            
-            add_border = st.checkbox("বর্ডার ও কাটার দাগ?", value=True)
-            
-            # Gap Control (New)
-            gap_size = st.slider("ছবির মাঝখানের গ্যাপ (Gap)", 0, 50, 10)
-            
-            with st.expander("অ্যাডভান্সড এডিটিং"):
+            # Additional AI Settings
+            with st.expander("AI সেটিংস (উজ্জ্বলতা/জুম)"):
                 brightness = st.slider("উজ্জ্বলতা", 0.5, 2.0, 1.1)
                 contrast = st.slider("কন্ট্রাস্ট", 0.5, 2.0, 1.1)
-                zoom = st.slider("জুম", 0.8, 1.5, 1.0)
-                move_y = st.slider("উপরে-নিচে সরান", -100, 100, 0)
+                zoom = st.slider("জুম (Zoom)", 0.8, 1.5, 1.0)
+                move_y_frame = st.slider("ফ্রেমের ভেতরে সরান", -100, 100, 0)
+                add_border = st.checkbox("বর্ডার দিন?", value=True)
 
-    with col2:
-        if uploaded_file:
-            if st.button("🚀 পেজ সাজান (Generate)"):
-                with st.spinner("AI পেজ সাজাচ্ছে..."):
+            # PROCESS BUTTON
+            if st.button("⚙️ ছবি রেডি করুন (Process)"):
+                with st.spinner("AI কাজ করছে..."):
                     try:
-                        # 1. Image Processing
                         img = Image.open(uploaded_file)
                         no_bg = remove(img)
                         enhancer = ImageEnhance.Brightness(no_bg)
@@ -131,70 +91,86 @@ if selected_tool == "📸 ফটো মেকার (পেপার সেভ�
                         enhancer = ImageEnhance.Contrast(img)
                         img = enhancer.enhance(contrast)
                         
-                        # 2. Target Size Calculation (300 DPI)
+                        # Size Logic
                         if size_mode == "পাসপোর্ট (40x50 mm)":
                             target_w, target_h = 472, 590 
                         else:
                             target_w, target_h = 236, 295 
                         
-                        # 3. Create Individual Photo
                         canvas = Image.new("RGBA", (target_w, target_h), bg_color)
                         scale = (target_w / img.width) * zoom
                         nw, nh = int(img.width * scale), int(img.height * scale)
                         img = img.resize((nw, nh), Image.LANCZOS)
                         
                         x = (target_w - nw) // 2
-                        y = (target_h - nh) + move_y
+                        y = (target_h - nh) + move_y_frame
                         canvas.paste(img, (x, y), img)
                         
                         if add_border:
-                            canvas = ImageOps.expand(canvas, border=3, fill='white')
+                            canvas = ImageOps.expand(canvas, border=4, fill='white')
                             canvas = ImageOps.expand(canvas, border=1, fill='#cccccc')
-                            
-                        final_photo = canvas.convert("RGB")
-                        st.image(final_photo, caption=f"সিঙ্গেল কপি ({size_mode})", width=120)
                         
-                        # 4. SMART GRID LOGIC (Paper Saver)
-                        # A4 Size: 2480 x 3508 pixels
-                        sheet_w, sheet_h = 2480, 3508
-                        sheet = Image.new("RGB", (sheet_w, sheet_h), "white")
-                        
-                        # Starting Position (Minimal Margins)
-                        margin_top = 50   # Only 50px from top
-                        margin_left = 50  # Only 50px from left
-                        
-                        current_x = margin_left
-                        current_y = margin_top
-                        
-                        photos_placed = 0
-                        
-                        for i in range(num_copies):
-                            # Check if photo fits in current row
-                            if current_x + final_photo.width > sheet_w:
-                                # Move to next row
-                                current_x = margin_left
-                                current_y += final_photo.height + gap_size
-                            
-                            # Check if photo fits in page height
-                            if current_y + final_photo.height > sheet_h:
-                                st.warning(f"⚠️ পেজ ভরে গেছে! মাত্র {photos_placed} টি ছবি আটানো সম্ভব হয়েছে।")
-                                break
-                            
-                            # Paste Photo
-                            sheet.paste(final_photo, (current_x, current_y))
-                            
-                            # Move X for next photo
-                            current_x += final_photo.width + gap_size
-                            photos_placed += 1
-                                
-                        st.image(sheet, caption=f"A4 প্রিন্ট প্রিভিউ ({photos_placed} কপি)", use_column_width=True)
-                        
-                        # Download
-                        buf = io.BytesIO()
-                        sheet.save(buf, format="JPEG", quality=95)
-                        st.download_button(f"📥 ডাউনলোড প্রিন্ট ফাইল", buf.getvalue(), "paper_saver_print.jpg", "image/jpeg")
+                        # Save to Session State (Memory)
+                        st.session_state.processed_photo = canvas.convert("RGB")
+                        st.session_state.photo_size = size_mode
+                        st.success("ছবি রেডি! এখন ডানপাশে মুভ করুন 👉")
                         
                     except Exception as e: st.error(str(e))
+
+    # 2. Live Moving Area (Right Side)
+    with col_settings:
+        if st.session_state.processed_photo is not None:
+            st.markdown("### ২. ছবি সাজান (কাটা কাগজের জন্য)")
+            
+            # --- LIVE SLIDERS ---
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                # X Axis Move
+                pos_x = st.slider("ডানে-বামে সরান (X)", 0, 2200, 50, step=10)
+            with c2:
+                # Y Axis Move
+                pos_y = st.slider("উপরে-নিচে সরান (Y)", 0, 3000, 50, step=10)
+            with c3:
+                # Copy Count
+                copies = st.slider("কয় কপি?", 1, 50, 4)
+            
+            gap = st.slider("ছবির মাঝখানের গ্যাপ", 0, 100, 30)
+
+            # --- REAL-TIME GENERATION ---
+            # This part runs instantly whenever a slider moves
+            final_photo = st.session_state.processed_photo
+            sheet = Image.new("RGB", (2480, 3508), "white")
+            
+            current_x = pos_x
+            current_y = pos_y
+            
+            for i in range(copies):
+                # Bounds check
+                if current_x + final_photo.width > 2480:
+                    current_x = pos_x # Reset X to start position
+                    current_y += final_photo.height + gap # New Line
+                
+                if current_y + final_photo.height > 3508:
+                    break # Stop if page ends
+                
+                sheet.paste(final_photo, (current_x, current_y))
+                current_x += final_photo.width + gap
+
+            # Display Result
+            st.image(sheet, caption="A4 প্রিন্ট প্রিভিউ (লাইভ)", use_column_width=True)
+            
+            # Download
+            buf = io.BytesIO()
+            sheet.save(buf, format="JPEG", quality=95)
+            st.download_button(f"📥 ডাউনলোড প্রিন্ট ফাইল", buf.getvalue(), "print_ready.jpg", "image/jpeg")
+            
+            if st.button("❌ নতুন ছবি নিন (Clear)"):
+                st.session_state.processed_photo = None
+                st.rerun()
+
+        else:
+            st.info("👈 বাম পাশ থেকে ছবি আপলোড করে 'ছবি রেডি করুন' বাটনে চাপ দিন।")
+            st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/1200px-PDF_file_icon.svg.png", width=100, caption="Waiting...") # Placeholder
 
 # ==========================================
 # TOOL 2: IMAGE CONVERTER
@@ -208,7 +184,6 @@ elif selected_tool == "🔄 ইমেজ কনভার্টার":
         image = Image.open(img_file)
         if image.mode in ("RGBA", "P") and target_format == "JPEG":
             image = image.convert("RGB")
-            
         buf = io.BytesIO()
         if target_format == "JPEG":
             image.save(buf, format="JPEG", quality=100)
@@ -222,7 +197,6 @@ elif selected_tool == "🔄 ইমেজ কনভার্টার":
         elif target_format == "WEBP":
             image.save(buf, format="WEBP")
             mime, ext = "image/webp", "webp"
-            
         st.success("কনভার্ট সম্পন্ন!")
         st.download_button(f"📥 ডাউনলোড {target_format}", buf.getvalue(), f"converted.{ext}", mime)
 
@@ -236,7 +210,6 @@ elif selected_tool == "✨ ফটো রিস্টোরার (AI)":
         file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
         img = cv2.imdecode(file_bytes, 1)
         st.image(img, channels="BGR", caption="আগের ছবি", width=300)
-        
         mode = st.radio("মোড:", ["শার্পনেস", "কালার ফিক্স", "নয়েজ রিমুভ"], horizontal=True)
         if st.button("✨ ফিক্স করুন"):
             processed = img.copy()
@@ -249,7 +222,6 @@ elif selected_tool == "✨ ফটো রিস্টোরার (AI)":
                 processed = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
             elif mode == "নয়েজ রিমুভ":
                 processed = cv2.fastNlMeansDenoisingColored(processed, None, 10, 10, 7, 21)
-
             final_pil = Image.fromarray(cv2.cvtColor(processed, cv2.COLOR_BGR2RGB))
             st.image(final_pil, caption="ফিক্স করা ছবি", width=300)
             buf = io.BytesIO()
