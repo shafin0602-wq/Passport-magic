@@ -28,7 +28,7 @@ st.markdown("""
         border-right: 1px solid #30363d;
     }
     
-    /* Input Fields (Dark Mode Fix) */
+    /* Input Fields */
     .stTextInput > div > div > input, 
     .stNumberInput > div > div > input,
     .stSelectbox > div > div > div {
@@ -44,7 +44,7 @@ st.markdown("""
         color: #e6edf3 !important;
     }
     
-    /* Buttons - Pro Green/Blue Gradient */
+    /* Buttons */
     div.stButton > button {
         width: 100%;
         background: linear-gradient(90deg, #238636 0%, #2ea043 100%);
@@ -79,20 +79,20 @@ with st.sidebar:
     selected_tool = st.radio(
         "টুলস মেনু:",
         [
-            "📸 ফটো মেকার (পাসপোর্ট/স্ট্যাম্প)", # Updated Name
+            "📸 ফটো মেকার (পেপার সেভার)",
             "🔄 ইমেজ কনভার্টার",
             "✨ ফটো রিস্টোরার (AI)",
             "📱 QR কোড জেনারেটর"
         ]
     )
     st.markdown("---")
-    st.caption("All-in-One Digital Center")
+    st.caption("Auto-Fill Paper Saving Mode")
 
 # ==========================================
-# TOOL 1: PHOTO MAKER (PASSPORT & STAMP)
+# TOOL 1: PHOTO MAKER (SMART AUTO FILL)
 # ==========================================
-if selected_tool == "📸 ফটো মেকার (পাসপোর্ট/স্ট্যাম্প)":
-    st.header("📸 স্টুডিও মাস্টার প্রো")
+if selected_tool == "📸 ফটো মেকার (পেপার সেভার)":
+    st.header("📸 স্টুডিও মাস্টার (স্মার্ট গ্রিড)")
     col1, col2 = st.columns([1, 2])
     
     with col1:
@@ -100,17 +100,17 @@ if selected_tool == "📸 ফটো মেকার (পাসপোর্ট/�
         if uploaded_file:
             st.markdown("### সেটিংস")
             
-            # SIZE SELECTION ADDED HERE
-            size_mode = st.radio("ছবির সাইজ:", ["পাসপোর্ট (40x50 mm)", "স্ট্যাম্প (20x25 mm)"], horizontal=True)
-            
+            size_mode = st.radio("সাইজ:", ["পাসপোর্ট (40x50 mm)", "স্ট্যাম্প (20x25 mm)"], horizontal=True)
             bg_color = st.color_picker("ব্যাকগ্রাউন্ড:", "#3b82f6")
             
-            # Dynamic Copy Limit based on size
-            max_copies = 25 if size_mode == "পাসপোর্ট (40x50 mm)" else 50
-            default_copies = 4 if size_mode == "পাসপোর্ট (40x50 mm)" else 10
+            # Smart Copy Input
+            st.info("💡 টিপস: পেপার ভরাতে চাইলে কপি সংখ্যা বাড়িয়ে দিন।")
+            num_copies = st.number_input("কয় কপি লাগবে?", 1, 100, 30) # Default increased
             
-            num_copies = st.number_input("A4 পেজে কয় কপি?", 1, max_copies, default_copies)
             add_border = st.checkbox("বর্ডার ও কাটার দাগ?", value=True)
+            
+            # Gap Control (New)
+            gap_size = st.slider("ছবির মাঝখানের গ্যাপ (Gap)", 0, 50, 10)
             
             with st.expander("অ্যাডভান্সড এডিটিং"):
                 brightness = st.slider("উজ্জ্বলতা", 0.5, 2.0, 1.1)
@@ -120,10 +120,10 @@ if selected_tool == "📸 ফটো মেকার (পাসপোর্ট/�
 
     with col2:
         if uploaded_file:
-            if st.button("🚀 ছবি তৈরি করুন"):
-                with st.spinner("AI কাজ করছে..."):
+            if st.button("🚀 পেজ সাজান (Generate)"):
+                with st.spinner("AI পেজ সাজাচ্ছে..."):
                     try:
-                        # 1. Process Image (Remove BG & Enhance)
+                        # 1. Image Processing
                         img = Image.open(uploaded_file)
                         no_bg = remove(img)
                         enhancer = ImageEnhance.Brightness(no_bg)
@@ -131,17 +131,14 @@ if selected_tool == "📸 ফটো মেকার (পাসপোর্ট/�
                         enhancer = ImageEnhance.Contrast(img)
                         img = enhancer.enhance(contrast)
                         
-                        # 2. Set Dimensions based on Selection
+                        # 2. Target Size Calculation (300 DPI)
                         if size_mode == "পাসপোর্ট (40x50 mm)":
-                            target_w, target_h = 472, 590 # Passport 300 DPI
-                            grid_cols, grid_rows = 4, 6
+                            target_w, target_h = 472, 590 
                         else:
-                            target_w, target_h = 236, 295 # Stamp 300 DPI (Half of Passport)
-                            grid_cols, grid_rows = 7, 8   # More fit on A4
+                            target_w, target_h = 236, 295 
                         
-                        # 3. Canvas Logic
+                        # 3. Create Individual Photo
                         canvas = Image.new("RGBA", (target_w, target_h), bg_color)
-                        
                         scale = (target_w / img.width) * zoom
                         nw, nh = int(img.width * scale), int(img.height * scale)
                         img = img.resize((nw, nh), Image.LANCZOS)
@@ -151,38 +148,51 @@ if selected_tool == "📸 ফটো মেকার (পাসপোর্ট/�
                         canvas.paste(img, (x, y), img)
                         
                         if add_border:
-                            canvas = ImageOps.expand(canvas, border=4, fill='white') # Thinner border for stamp
+                            canvas = ImageOps.expand(canvas, border=3, fill='white')
                             canvas = ImageOps.expand(canvas, border=1, fill='#cccccc')
                             
                         final_photo = canvas.convert("RGB")
+                        st.image(final_photo, caption=f"সিঙ্গেল কপি ({size_mode})", width=120)
                         
-                        # Show Single Preview
-                        st.image(final_photo, caption=f"সিঙ্গেল কপি ({size_mode})", width=150)
+                        # 4. SMART GRID LOGIC (Paper Saver)
+                        # A4 Size: 2480 x 3508 pixels
+                        sheet_w, sheet_h = 2480, 3508
+                        sheet = Image.new("RGB", (sheet_w, sheet_h), "white")
                         
-                        # 4. Create A4 Sheet
-                        sheet = Image.new("RGB", (2480, 3508), "white")
+                        # Starting Position (Minimal Margins)
+                        margin_top = 50   # Only 50px from top
+                        margin_left = 50  # Only 50px from left
                         
-                        # Grid Calculation
-                        gap = 40
-                        total_grid_w = (grid_cols * final_photo.width) + ((grid_cols - 1) * gap)
-                        margin_left = (2480 - total_grid_w) // 2
-                        margin_top = 150
+                        current_x = margin_left
+                        current_y = margin_top
                         
-                        count = 0
-                        for r in range(grid_rows):
-                            for c in range(grid_cols):
-                                if count >= num_copies: break
-                                x_off = margin_left + c*(final_photo.width + gap)
-                                y_off = margin_top + r*(final_photo.height + gap)
-                                sheet.paste(final_photo, (x_off, y_off))
-                                count += 1
+                        photos_placed = 0
+                        
+                        for i in range(num_copies):
+                            # Check if photo fits in current row
+                            if current_x + final_photo.width > sheet_w:
+                                # Move to next row
+                                current_x = margin_left
+                                current_y += final_photo.height + gap_size
+                            
+                            # Check if photo fits in page height
+                            if current_y + final_photo.height > sheet_h:
+                                st.warning(f"⚠️ পেজ ভরে গেছে! মাত্র {photos_placed} টি ছবি আটানো সম্ভব হয়েছে।")
+                                break
+                            
+                            # Paste Photo
+                            sheet.paste(final_photo, (current_x, current_y))
+                            
+                            # Move X for next photo
+                            current_x += final_photo.width + gap_size
+                            photos_placed += 1
                                 
-                        st.image(sheet, caption="A4 প্রিন্ট প্রিভিউ", use_column_width=True)
+                        st.image(sheet, caption=f"A4 প্রিন্ট প্রিভিউ ({photos_placed} কপি)", use_column_width=True)
                         
-                        # Downloads
+                        # Download
                         buf = io.BytesIO()
                         sheet.save(buf, format="JPEG", quality=95)
-                        st.download_button(f"📥 ডাউনলোড প্রিন্ট ফাইল ({size_mode})", buf.getvalue(), "print_file.jpg", "image/jpeg")
+                        st.download_button(f"📥 ডাউনলোড প্রিন্ট ফাইল", buf.getvalue(), "paper_saver_print.jpg", "image/jpeg")
                         
                     except Exception as e: st.error(str(e))
 
