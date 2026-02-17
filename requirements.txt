@@ -5,4 +5,3 @@ numpy
 onnxruntime
 opencv-python-headless
 qrcode
-pypdf
