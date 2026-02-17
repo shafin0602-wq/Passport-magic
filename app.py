@@ -5,7 +5,6 @@ import io
 import qrcode
 import cv2
 import numpy as np
-from pypdf import PdfWriter
 
 # ==========================================
 # 1. PAGE CONFIGURATION
@@ -66,17 +65,6 @@ st.markdown("""
     h1, h2, h3 {
         color: #58a6ff !important;
     }
-    
-    /* Divider */
-    hr {
-        border-color: #30363d;
-    }
-    
-    /* Expander */
-    .streamlit-expanderHeader {
-        background-color: #161b22;
-        color: white;
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -91,8 +79,7 @@ with st.sidebar:
     selected_tool = st.radio(
         "টুলস মেনু:",
         [
-            "📸 পাসপোর্ট ফটো মেকার",
-            "📂 PDF জয়েনার (Merge)",
+            "📸 ফটো মেকার (পাসপোর্ট/স্ট্যাম্প)", # Updated Name
             "🔄 ইমেজ কনভার্টার",
             "✨ ফটো রিস্টোরার (AI)",
             "📱 QR কোড জেনারেটর"
@@ -102,18 +89,27 @@ with st.sidebar:
     st.caption("All-in-One Digital Center")
 
 # ==========================================
-# TOOL 1: PASSPORT PHOTO MAKER
+# TOOL 1: PHOTO MAKER (PASSPORT & STAMP)
 # ==========================================
-if selected_tool == "📸 পাসপোর্ট ফটো মেকার":
-    st.header("📸 পাসপোর্ট স্টুডিও প্রো")
+if selected_tool == "📸 ফটো মেকার (পাসপোর্ট/স্ট্যাম্প)":
+    st.header("📸 স্টুডিও মাস্টার প্রো")
     col1, col2 = st.columns([1, 2])
     
     with col1:
         uploaded_file = st.file_uploader("ছবি আপলোড করুন", type=["jpg", "png", "jpeg"])
         if uploaded_file:
             st.markdown("### সেটিংস")
+            
+            # SIZE SELECTION ADDED HERE
+            size_mode = st.radio("ছবির সাইজ:", ["পাসপোর্ট (40x50 mm)", "স্ট্যাম্প (20x25 mm)"], horizontal=True)
+            
             bg_color = st.color_picker("ব্যাকগ্রাউন্ড:", "#3b82f6")
-            num_copies = st.number_input("A4 পেজে কয় কপি?", 1, 25, 4)
+            
+            # Dynamic Copy Limit based on size
+            max_copies = 25 if size_mode == "পাসপোর্ট (40x50 mm)" else 50
+            default_copies = 4 if size_mode == "পাসপোর্ট (40x50 mm)" else 10
+            
+            num_copies = st.number_input("A4 পেজে কয় কপি?", 1, max_copies, default_copies)
             add_border = st.checkbox("বর্ডার ও কাটার দাগ?", value=True)
             
             with st.expander("অ্যাডভান্সড এডিটিং"):
@@ -127,7 +123,7 @@ if selected_tool == "📸 পাসপোর্ট ফটো মেকার":
             if st.button("🚀 ছবি তৈরি করুন"):
                 with st.spinner("AI কাজ করছে..."):
                     try:
-                        # 1. Process Image
+                        # 1. Process Image (Remove BG & Enhance)
                         img = Image.open(uploaded_file)
                         no_bg = remove(img)
                         enhancer = ImageEnhance.Brightness(no_bg)
@@ -135,8 +131,15 @@ if selected_tool == "📸 পাসপোর্ট ফটো মেকার":
                         enhancer = ImageEnhance.Contrast(img)
                         img = enhancer.enhance(contrast)
                         
-                        # 2. Canvas Logic
-                        target_w, target_h = 472, 590
+                        # 2. Set Dimensions based on Selection
+                        if size_mode == "পাসপোর্ট (40x50 mm)":
+                            target_w, target_h = 472, 590 # Passport 300 DPI
+                            grid_cols, grid_rows = 4, 6
+                        else:
+                            target_w, target_h = 236, 295 # Stamp 300 DPI (Half of Passport)
+                            grid_cols, grid_rows = 7, 8   # More fit on A4
+                        
+                        # 3. Canvas Logic
                         canvas = Image.new("RGBA", (target_w, target_h), bg_color)
                         
                         scale = (target_w / img.width) * zoom
@@ -148,64 +151,43 @@ if selected_tool == "📸 পাসপোর্ট ফটো মেকার":
                         canvas.paste(img, (x, y), img)
                         
                         if add_border:
-                            canvas = ImageOps.expand(canvas, border=5, fill='white')
+                            canvas = ImageOps.expand(canvas, border=4, fill='white') # Thinner border for stamp
                             canvas = ImageOps.expand(canvas, border=1, fill='#cccccc')
                             
-                        passport = canvas.convert("RGB")
+                        final_photo = canvas.convert("RGB")
                         
-                        # 3. Create A4 Sheet
+                        # Show Single Preview
+                        st.image(final_photo, caption=f"সিঙ্গেল কপি ({size_mode})", width=150)
+                        
+                        # 4. Create A4 Sheet
                         sheet = Image.new("RGB", (2480, 3508), "white")
-                        cols, rows, gap = 4, 6, 50
-                        margin_left = (2480 - ((cols*passport.width) + (cols-1)*gap)) // 2
+                        
+                        # Grid Calculation
+                        gap = 40
+                        total_grid_w = (grid_cols * final_photo.width) + ((grid_cols - 1) * gap)
+                        margin_left = (2480 - total_grid_w) // 2
+                        margin_top = 150
                         
                         count = 0
-                        for r in range(rows):
-                            for c in range(cols):
+                        for r in range(grid_rows):
+                            for c in range(grid_cols):
                                 if count >= num_copies: break
-                                x_off = margin_left + c*(passport.width+gap)
-                                y_off = 150 + r*(passport.height+gap)
-                                sheet.paste(passport, (x_off, y_off))
+                                x_off = margin_left + c*(final_photo.width + gap)
+                                y_off = margin_top + r*(final_photo.height + gap)
+                                sheet.paste(final_photo, (x_off, y_off))
                                 count += 1
                                 
                         st.image(sheet, caption="A4 প্রিন্ট প্রিভিউ", use_column_width=True)
                         
+                        # Downloads
                         buf = io.BytesIO()
                         sheet.save(buf, format="JPEG", quality=95)
-                        st.download_button("📥 ডাউনলোড প্রিন্ট ফাইল", buf.getvalue(), "passport_print.jpg", "image/jpeg")
+                        st.download_button(f"📥 ডাউনলোড প্রিন্ট ফাইল ({size_mode})", buf.getvalue(), "print_file.jpg", "image/jpeg")
+                        
                     except Exception as e: st.error(str(e))
 
 # ==========================================
-# TOOL 2: PDF MERGER
-# ==========================================
-elif selected_tool == "📂 PDF জয়েনার (Merge)":
-    st.header("📂 PDF ও ইমেজ জয়েনার")
-    st.write("একাধিক PDF বা ছবি একসাথে জোড়া দিয়ে একটি ফাইল বানান।")
-    
-    uploaded_files = st.file_uploader("ফাইল দিন (PDF/Image)", 
-                                      type=["pdf", "jpg", "png"], 
-                                      accept_multiple_files=True)
-    
-    if uploaded_files and st.button("🔗 ফাইল জোড়া লাগান"):
-        merger = PdfWriter()
-        try:
-            for file in uploaded_files:
-                if file.type in ["image/jpeg", "image/png", "image/jpg"]:
-                    img = Image.open(file)
-                    img_pdf = io.BytesIO()
-                    img = img.convert('RGB')
-                    img.save(img_pdf, format="PDF")
-                    merger.append(img_pdf)
-                else:
-                    merger.append(file)
-            
-            output_pdf = io.BytesIO()
-            merger.write(output_pdf)
-            st.success("✅ ফাইল জোড়া লাগানো হয়েছে!")
-            st.download_button("📥 ডাউনলোড মার্জড PDF", output_pdf.getvalue(), "merged.pdf", "application/pdf")
-        except Exception as e: st.error(str(e))
-
-# ==========================================
-# TOOL 3: IMAGE CONVERTER
+# TOOL 2: IMAGE CONVERTER
 # ==========================================
 elif selected_tool == "🔄 ইমেজ কনভার্টার":
     st.header("🔄 ইমেজ ফরম্যাট কনভার্টার")
@@ -235,7 +217,7 @@ elif selected_tool == "🔄 ইমেজ কনভার্টার":
         st.download_button(f"📥 ডাউনলোড {target_format}", buf.getvalue(), f"converted.{ext}", mime)
 
 # ==========================================
-# TOOL 4: PHOTO RESTORER
+# TOOL 3: PHOTO RESTORER
 # ==========================================
 elif selected_tool == "✨ ফটো রিস্টোরার (AI)":
     st.header("✨ ফটো এনহ্যান্সার")
@@ -265,7 +247,7 @@ elif selected_tool == "✨ ফটো রিস্টোরার (AI)":
             st.download_button("📥 ডাউনলোড", buf.getvalue(), "restored.jpg", "image/jpeg")
 
 # ==========================================
-# TOOL 5: QR CODE
+# TOOL 4: QR CODE
 # ==========================================
 elif selected_tool == "📱 QR কোড জেনারেটর":
     st.header("📱 QR কোড মেকার")
